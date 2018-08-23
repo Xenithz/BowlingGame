@@ -12,9 +12,18 @@ public class ScoreManager : MonoBehaviour
 	[SerializeField]
 	private float checkThreshold = 0.6f;
 
-	private Text scoreText;
+	public Text scoreText;
 
 	public GameObject[] pinArray;
+
+	private void Update()
+	{
+		if(Input.GetKeyDown(KeyCode.Q))
+		{
+			CheckPins();
+			DisplayScore();
+		}
+	}
 
 	public void DisplayScore()
 	{
@@ -31,7 +40,7 @@ public class ScoreManager : MonoBehaviour
 
 	public void CheckPins()
 	{
-		for(int i = 0; i <= pinArray.Length; i++)
+		for(int i = 0; i < pinArray.Length; i++)
 		{
 			if(UprightCheck(pinArray[i]))
 			{
@@ -47,6 +56,7 @@ public class ScoreManager : MonoBehaviour
 
 	private bool UprightCheck(GameObject gameObjectToCheck)
 	{
-		return gameObjectToCheck.transform.up.y > checkThreshold;
+		Debug.Log(gameObjectToCheck.transform.up.y);
+		return gameObjectToCheck.transform.up.y < checkThreshold;
 	}
 }
