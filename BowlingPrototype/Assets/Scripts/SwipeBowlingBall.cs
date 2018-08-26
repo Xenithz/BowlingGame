@@ -10,6 +10,7 @@ public class SwipeBowlingBall : MonoBehaviour
 
     [SerializeField]
 	private Vector3 startingPosition;
+    private Vector3 direction;
     private float startTime;
     [SerializeField]
     private float powerMultiplier;
@@ -69,6 +70,12 @@ public class SwipeBowlingBall : MonoBehaviour
         startTime = Time.time;
     }
 
+    private void SaveValuesMobile(Touch touchToPass)
+    {
+        startingPosition = touchToPass.position;
+        startTime = Time.time;
+    }
+
     private void ProccessInput()
     {
         if(flickOnce == true)
@@ -79,8 +86,33 @@ public class SwipeBowlingBall : MonoBehaviour
             }
             if(Input.GetMouseButtonUp(0))
             {
-                CalculateForce();
+                CalculateForcePC();
                 flickOnce = false;
+            }
+
+            if(Input.touchCount > 0)
+            {
+                Touch touch = Input.GetTouch(0);
+
+                if(touch.phase == TouchPhase.Began)
+                {
+                    SaveValuesMobile(touch);
+                }
+                if(touch.phase == TouchPhase.Moved)
+                {
+                    Vector3 endingPosition = touch.position;
+                    startingPosition.z = 0.1f;
+                    endingPosition.z = 0.1f;
+
+                    startingPosition = Camera.main.ScreenToWorldPoint(startingPosition);
+                    endingPosition = Camera.main.ScreenToWorldPoint(endingPosition);
+
+                    direction = endingPosition - startingPosition;
+                }
+                if(touch.phase == TouchPhase.Ended)
+                {
+                    CalculateForceMobile(touch, direction);
+                }
             }
         }
         else if(flickOnce == false)
@@ -89,7 +121,7 @@ public class SwipeBowlingBall : MonoBehaviour
         }
     }
 
-    private void CalculateForce()
+    private void CalculateForcePC()
     {
         Vector3 endingPosition = Input.mousePosition;
         float endTime = Time.time;
@@ -125,6 +157,42 @@ public class SwipeBowlingBall : MonoBehaviour
         myRigidBody.AddForce(velocity, ForceMode.Impulse);
     }
 
+    private void CalculateForceMobile(Touch touchToPass, Vector3 direction)
+    {
+        // Vector3 endingPosition = touchToPass.position;
+        float endTime = Time.time;
+
+        // startingPosition.z = 0.1f;
+        // endingPosition.z = 0.1f;
+
+        // startingPosition = Camera.main.ScreenToWorldPoint(startingPosition);
+        // endingPosition = Camera.main.ScreenToWorldPoint(endingPosition);
+
+        float duration = endTime - startTime;
+
+        // Vector3 direction = endingPosition - startingPosition;
+
+        float distance = direction.magnitude;
+
+        float power = distance / duration;
+
+        power -= expectedMinimum;
+        power /= expectedMaximum - expectedMinimum;
+
+        power = Mathf.Clamp01(power);
+
+        power *= desiredMaximum - desiredMinimum;
+        power += desiredMinimum;
+
+        Vector3 velocity = (ball.transform.rotation * direction).normalized * power * powerMultiplier;
+
+        velocity.y = 0f;
+
+        Debug.Log(velocity);
+
+        myRigidBody.AddForce(velocity, ForceMode.Impulse);
+    }
+
     public void ResetBallAndScore()
     {
         ball.transform.position = ballSpawn.transform.position;
@@ -133,7 +201,7 @@ public class SwipeBowlingBall : MonoBehaviour
         myRigidBody.angularVelocity = Vector3.zero;
         flickOnce = true;
         ScoreManager.instance.ResetScore();
-        checkScoreOnce = false;
+        checkScoreOnce = true;
     }
     
     private void OnDrawGizmos() 
@@ -144,6 +212,7 @@ public class SwipeBowlingBall : MonoBehaviour
 
     private void CallScoreCalculate()
     {
+        checkScoreOnce = false;
         ScoreManager.instance.DisplayScore();
     }
 }

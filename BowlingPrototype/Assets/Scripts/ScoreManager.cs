@@ -19,6 +19,8 @@ public class ScoreManager : MonoBehaviour
 
 	public GameObject[] pinArray;
 
+	public Transform[] pinPositionsArray;
+
 	private void Start()
 	{
 		instance = this;
@@ -30,6 +32,7 @@ public class ScoreManager : MonoBehaviour
 		{
 			CheckPins();
 			DisplayScore();
+			StopAllCoroutines();
 		}
 	}
 
@@ -48,14 +51,17 @@ public class ScoreManager : MonoBehaviour
 
 	IEnumerator CheckPins()
 	{
+		Debug.Log("Check pins was called!");
 		yield return new WaitForSeconds(5f);
 		for(int i = 0; i < pinArray.Length; i++)
 		{
+			Debug.Log("There are " + pinArray.Length + " pins!");
 			if(UprightCheck(pinArray[i]))
 			{
+				Debug.Log("iteration " + i);
 				scoreValue++;
 				Debug.Log("Pin "+ i +" fell!");
-				Debug.Log(scoreValue);
+				Debug.Log("current score is: " + scoreValue);
 			}
 			else
 			{
@@ -75,5 +81,21 @@ public class ScoreManager : MonoBehaviour
 	{
 		scoreText.text = "";
 		scoreValue = 0;
+		ResetPins();
+	}
+
+	private void ResetPins()
+	{
+		for(int i = 0; i < pinArray.Length; i++)
+		{
+			pinArray[i].transform.position = pinPositionsArray[i].position;
+			Debug.Log("Set Pin " + i + " to position " + i);
+			pinArray[i].transform.rotation = Quaternion.identity;
+			Debug.Log("Set Pin " + i + " to default rotation");
+			pinArray[i].GetComponent<Rigidbody>().velocity = Vector3.zero;
+			pinArray[i].GetComponent<Rigidbody>().angularVelocity = Vector3.zero;
+			Debug.Log("Set Pin " + i + " to zero velocity/angular velocity");
+			
+		}
 	}
 }
