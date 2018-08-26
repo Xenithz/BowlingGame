@@ -4,11 +4,15 @@ using UnityEngine;
 
 public class SwipeBowlingBall : MonoBehaviour 
 {
+    //TODO Convert to mobile control also
+
     public GameObject ball;
 
     [SerializeField]
 	private Vector3 startingPosition;
     private float startTime;
+    [SerializeField]
+    private float powerMultiplier;
 
     //Expected values for normalization
     [SerializeField]
@@ -20,9 +24,43 @@ public class SwipeBowlingBall : MonoBehaviour
     [SerializeField]
     private float desiredMaximum = 20f;
 
+    private Rigidbody myRigidBody;
+
+    private bool flickOnce;
+    private bool checkScoreOnce;
+
+    [SerializeField]
+    private Transform ballSpawn;
+
+    [SerializeField]
+    private Vector3 gizmoSize;
+
+    private void Start()
+    {
+        myRigidBody = ball.GetComponent<Rigidbody>();
+        flickOnce = true;
+        checkScoreOnce = true;
+    }
+
     private void Update()
     {
         ProccessInput();
+
+        if(Input.GetKeyDown(KeyCode.Q))
+        {
+            ResetBallAndScore();    
+        }
+    }
+
+    private void OnCollisionEnter(Collision myCollision)
+    {
+        if(myCollision.gameObject.tag == "Pin")
+        {
+            if(checkScoreOnce == true)
+            {
+                CallScoreCalculate();
+            }
+        }
     }
 
     private void SaveValues()
@@ -33,13 +71,21 @@ public class SwipeBowlingBall : MonoBehaviour
 
     private void ProccessInput()
     {
-        if(Input.GetMouseButtonDown(0))
+        if(flickOnce == true)
         {
-            SaveValues();
+            if(Input.GetMouseButtonDown(0))
+            {
+                SaveValues();
+            }
+            if(Input.GetMouseButtonUp(0))
+            {
+                CalculateForce();
+                flickOnce = false;
+            }
         }
-        if(Input.GetMouseButtonUp(0))
+        else if(flickOnce == false)
         {
-            CalculateForce();
+            Debug.Log("Can't flick anymore!");
         }
     }
 
@@ -70,8 +116,34 @@ public class SwipeBowlingBall : MonoBehaviour
         power *= desiredMaximum - desiredMinimum;
         power += desiredMinimum;
 
-        Vector3 velocity = (ball.transform.rotation * direction).normalized * power;
+        Vector3 velocity = (ball.transform.rotation * direction).normalized * power * powerMultiplier;
 
+        velocity.y = 0f;
 
+        Debug.Log(velocity);
+
+        myRigidBody.AddForce(velocity, ForceMode.Impulse);
+    }
+
+    public void ResetBallAndScore()
+    {
+        ball.transform.position = ballSpawn.transform.position;
+        ball.transform.rotation = Quaternion.identity;
+        myRigidBody.velocity = Vector3.zero;
+        myRigidBody.angularVelocity = Vector3.zero;
+        flickOnce = true;
+        ScoreManager.instance.ResetScore();
+        checkScoreOnce = false;
+    }
+    
+    private void OnDrawGizmos() 
+    {
+        Gizmos.color = Color.red;
+        Gizmos.DrawCube(ballSpawn.transform.position, gizmoSize);
+    }
+
+    private void CallScoreCalculate()
+    {
+        ScoreManager.instance.DisplayScore();
     }
 }
