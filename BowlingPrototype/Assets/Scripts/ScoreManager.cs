@@ -5,6 +5,8 @@ using UnityEngine.UI;
 
 public class ScoreManager : MonoBehaviour 
 {
+	private SwipeBowlingBall myBall;
+
 	public static ScoreManager instance;
 	
 	[SerializeField]
@@ -20,6 +22,8 @@ public class ScoreManager : MonoBehaviour
 	public GameObject[] pinArray;
 
 	public List<Transform> pinPositionsList;
+
+	
 
 	private void Start()
 	{
@@ -85,6 +89,7 @@ public class ScoreManager : MonoBehaviour
 		scoreText.text = "";
 		scoreValue = 0;
 		ResetPins();
+		myBall.ResetBallOnly();
 	}
 
 	private void ResetPins()
@@ -93,7 +98,7 @@ public class ScoreManager : MonoBehaviour
 		{
 			pinArray[i].transform.position = pinPositionsList[i].position;
 			Debug.Log("Set Pin " + i + " to position " + i);
-			pinArray[i].transform.rotation = Quaternion.identity;
+			pinArray[i].transform.rotation = pinPositionsList[i].rotation;
 			Debug.Log("Set Pin " + i + " to default rotation");
 			pinArray[i].GetComponent<Rigidbody>().velocity = Vector3.zero;
 			pinArray[i].GetComponent<Rigidbody>().angularVelocity = Vector3.zero;
@@ -105,13 +110,14 @@ public class ScoreManager : MonoBehaviour
 	private void GeneratePinPos()
 	{
 		var emptyGameObject = new GameObject();
-		emptyGameObject.name = "template";
+		emptyGameObject.name = "templatePin";
 		
 		for(int i = 0; i < pinArray.Length; i++)
 		{
-			var temp = Instantiate(emptyGameObject, pinArray[i].transform.position, Quaternion.identity);
+			var temp = Instantiate(emptyGameObject, pinArray[i].transform.position, Quaternion.Euler(-90f, 0f, 0f));
 			temp.name = "PinPosition" + i;
 			temp.transform.localScale = pinArray[i].transform.localScale;
+			temp.transform.SetParent(pinArray[i].transform.parent);
 			pinPositionsList.Add(temp.transform);
 		}
 	}

@@ -24,7 +24,7 @@ public class SwipeBowlingBall : MonoBehaviour
     private bool checkScoreOnce;
 
     [SerializeField]
-    private Transform ballSpawn;
+    private GameObject ballSpawn;
 
     [SerializeField]
     private Vector3 gizmoSize;
@@ -40,6 +40,8 @@ public class SwipeBowlingBall : MonoBehaviour
 
     private const float scaleConst = 1000f;
 
+    public bool detected;
+
     private void Start()
     {
         deltaList = new List<Vector2>();
@@ -48,6 +50,9 @@ public class SwipeBowlingBall : MonoBehaviour
         checkScoreOnce = true;
         groundPlane = new Plane(Vector3.up, 0f);
         powerMultiplier *= Screen.width / scaleConst;
+        GenerateBallSpawn();
+        myRigidBody.Sleep();
+        detected = false;
     }
 
     private void Update()
@@ -73,43 +78,47 @@ public class SwipeBowlingBall : MonoBehaviour
 
     private void ProccessInput()
     {
-        if(flickOnce == true)
+        if(detected == true)
         {
-            if(Input.touchCount > 0)
+            if(flickOnce == true)
             {
-                Touch touch = Input.GetTouch(0);
+                if(Input.touchCount > 0)
+                {
+                    Touch touch = Input.GetTouch(0);
 
-                if(touch.phase == TouchPhase.Began)
-                {
-                    Debug.Log("Started touching");
-                    deltaList.Clear();
-                    frameTrack=0;
-                }
-                if(touch.phase == TouchPhase.Moved)
-                {
-                    frameTrack++;
-                    
-                    if(frameTrack <= maxFrames)
+                    if(touch.phase == TouchPhase.Began)
                     {
-                        SaveDeltaPosition(touch);
-
-                        if(frameTrack == 1)
+                        Debug.Log("Started touching");
+                        myRigidBody.WakeUp();
+                        deltaList.Clear();
+                        frameTrack=0;
+                    }
+                    if(touch.phase == TouchPhase.Moved)
+                    {
+                        frameTrack++;
+                    
+                        if(frameTrack <= maxFrames)
                         {
-                            startingPosition = SendRay(touch);
+                            SaveDeltaPosition(touch);
+
+                            if(frameTrack == 1)
+                            {
+                                startingPosition = SendRay(touch);
+                            }
                         }
                     }
-                }
-                if(touch.phase == TouchPhase.Ended||frameTrack>=maxFrames)
-                {
-                    endPosition = SendRay(touch);
-                    CalculateFlick();
-                    flickOnce = false;
+                    if(touch.phase == TouchPhase.Ended||frameTrack>=maxFrames)
+                    {
+                        endPosition = SendRay(touch);
+                        CalculateFlick();
+                        flickOnce = false;
+                    }
                 }
             }
-        }
-        else if(flickOnce == false)
-        {
-            Debug.Log("Can't flick anymore!");
+            else if(flickOnce == false)
+            {
+                Debug.Log("Can't flick anymore!");
+            }
         }
     }
 
@@ -158,8 +167,20 @@ public class SwipeBowlingBall : MonoBehaviour
         ball.transform.rotation = Quaternion.identity;
         myRigidBody.velocity = Vector3.zero;
         myRigidBody.angularVelocity = Vector3.zero;
+        myRigidBody.Sleep();
         flickOnce = true;
         ScoreManager.instance.ResetScore();
+        checkScoreOnce = true;
+    }
+
+    public void ResetBallOnly()
+    {
+        ball.transform.position = ballSpawn.transform.position;
+        ball.transform.rotation = Quaternion.identity;
+        myRigidBody.velocity = Vector3.zero;
+        myRigidBody.angularVelocity = Vector3.zero;
+        myRigidBody.Sleep();
+        flickOnce = true;
         checkScoreOnce = true;
     }
     
@@ -173,5 +194,18 @@ public class SwipeBowlingBall : MonoBehaviour
     {
         checkScoreOnce = false;
         ScoreManager.instance.DisplayScore();
+    }
+
+    private void GenerateBallSpawn()
+    {
+        var emptyGameObject = new GameObject();
+		emptyGameObject.name = "templateBall";
+
+        var temp = Instantiate(emptyGameObject, ball.transform.position, Quaternion.identity);
+		temp.name = "BallPosition";
+		temp.transform.localScale = ball.transform.localScale;
+		temp.transform.SetParent(ball.transform.parent);
+
+        ballSpawn = temp;
     }
 }

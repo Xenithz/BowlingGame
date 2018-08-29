@@ -5,6 +5,9 @@ using Vuforia;
 
 public class ProtoDetectHandler : DefaultTrackableEventHandler
 {
+	[SerializeField]
+	private SwipeBowlingBall myBowlingBall;
+
 	protected override void Start()
 	{
 		mTrackableBehaviour = GetComponent<TrackableBehaviour>();
@@ -25,17 +28,21 @@ public class ProtoDetectHandler : DefaultTrackableEventHandler
 
 		foreach (var component in rigidBodyComponents)
 			component.WakeUp();
+
+		myBowlingBall.detected = true;
 	}
 
 	protected override void OnTrackingLost()
 	{
 		base.OnTrackingLost();
 
+		//FindObjectOfType<SwipeBowlingBall>().ResetBallAndScore();
+
 		var rigidBodyComponents = GetComponentsInChildren<Rigidbody>(true);
 
 		foreach (var component in rigidBodyComponents)
 			component.Sleep();
 
-		FindObjectOfType<SwipeBowlingBall>().ResetBallAndScore();
+		myBowlingBall.detected = false;
 	}
 }
