@@ -4,9 +4,12 @@ using UnityEngine;
 
 public class SwipeBowlingBall : MonoBehaviour 
 {
-    //TODO Convert to mobile control also
-
     public GameObject ball;
+
+    private int frameTrack;
+
+    [SerializeField]
+    private int maxFrames = 5;
 
     [SerializeField]
 	private Vector3 startingPosition;
@@ -14,16 +17,6 @@ public class SwipeBowlingBall : MonoBehaviour
     private float startTime;
     [SerializeField]
     private float powerMultiplier;
-
-    //Expected values for normalization
-    [SerializeField]
-    private float expectedMinimum = 50f;
-    [SerializeField]
-    private float expectedMaximum = 60f;
-    [SerializeField]
-    private float desiredMinimum = 15f;
-    [SerializeField]
-    private float desiredMaximum = 20f;
 
     private Rigidbody myRigidBody;
 
@@ -36,11 +29,25 @@ public class SwipeBowlingBall : MonoBehaviour
     [SerializeField]
     private Vector3 gizmoSize;
 
+    [SerializeField]
+    private List<Vector2> deltaList;
+
+    private Plane groundPlane;
+
+    private Vector3 startPosition;
+
+    private Vector3 endPosition;
+
+    private const float scaleConst = 1000f;
+
     private void Start()
     {
+        deltaList = new List<Vector2>();
         myRigidBody = ball.GetComponent<Rigidbody>();
         flickOnce = true;
         checkScoreOnce = true;
+        groundPlane = new Plane(Vector3.up, 0f);
+        powerMultiplier *= Screen.width / scaleConst;
     }
 
     private void Update()
@@ -64,54 +71,39 @@ public class SwipeBowlingBall : MonoBehaviour
         }
     }
 
-    private void SaveValues()
-    {
-        startingPosition = Input.mousePosition;
-        startTime = Time.time;
-    }
-
-    private void SaveValuesMobile(Touch touchToPass)
-    {
-        startingPosition = touchToPass.position;
-        startTime = Time.time;
-    }
-
     private void ProccessInput()
     {
         if(flickOnce == true)
         {
-            if(Input.GetMouseButtonDown(0))
-            {
-                SaveValues();
-            }
-            if(Input.GetMouseButtonUp(0))
-            {
-                CalculateForcePC();
-                flickOnce = false;
-            }
-
             if(Input.touchCount > 0)
             {
                 Touch touch = Input.GetTouch(0);
 
                 if(touch.phase == TouchPhase.Began)
                 {
-                    SaveValuesMobile(touch);
+                    Debug.Log("Started touching");
+                    deltaList.Clear();
+                    frameTrack=0;
                 }
                 if(touch.phase == TouchPhase.Moved)
                 {
-                    Vector3 endingPosition = touch.position;
-                    startingPosition.z = 0.1f;
-                    endingPosition.z = 0.1f;
+                    frameTrack++;
+                    
+                    if(frameTrack <= maxFrames)
+                    {
+                        SaveDeltaPosition(touch);
 
-                    startingPosition = Camera.main.ScreenToWorldPoint(startingPosition);
-                    endingPosition = Camera.main.ScreenToWorldPoint(endingPosition);
-
-                    direction = endingPosition - startingPosition;
+                        if(frameTrack == 1)
+                        {
+                            startingPosition = SendRay(touch);
+                        }
+                    }
                 }
-                if(touch.phase == TouchPhase.Ended)
+                if(touch.phase == TouchPhase.Ended||frameTrack>=maxFrames)
                 {
-                    CalculateForceMobile(touch, direction);
+                    endPosition = SendRay(touch);
+                    CalculateFlick();
+                    flickOnce = false;
                 }
             }
         }
@@ -121,76 +113,43 @@ public class SwipeBowlingBall : MonoBehaviour
         }
     }
 
-    private void CalculateForcePC()
+    private Vector3 SendRay(Touch touchToPass)
     {
-        Vector3 endingPosition = Input.mousePosition;
-        float endTime = Time.time;
-
-        startingPosition.z = 0.1f;
-        endingPosition.z = 0.1f;
-
-        startingPosition = Camera.main.ScreenToWorldPoint(startingPosition);
-        endingPosition = Camera.main.ScreenToWorldPoint(endingPosition);
-
-        float duration = endTime - startTime;
-
-        Vector3 direction = endingPosition - startingPosition;
-
-        float distance = direction.magnitude;
-
-        float power = distance / duration;
-
-        power -= expectedMinimum;
-        power /= expectedMaximum - expectedMinimum;
-
-        power = Mathf.Clamp01(power);
-
-        power *= desiredMaximum - desiredMinimum;
-        power += desiredMinimum;
-
-        Vector3 velocity = (ball.transform.rotation * direction).normalized * power * powerMultiplier;
-
-        velocity.y = 0f;
-
-        Debug.Log(velocity);
-
-        myRigidBody.AddForce(velocity, ForceMode.Impulse);
+        Ray myRay = Camera.main.ScreenPointToRay(touchToPass.position);
+        float enter = 0f;
+        if(groundPlane.Raycast(myRay, out enter))
+        {
+            return myRay.GetPoint(enter);
+        }
+        else
+        {
+            return Vector3.zero;
+        }
     }
 
-    private void CalculateForceMobile(Touch touchToPass, Vector3 direction)
+    private void SaveDeltaPosition(Touch myTouch)
     {
-        // Vector3 endingPosition = touchToPass.position;
-        float endTime = Time.time;
+        Vector2 deltaToAdd = myTouch.deltaPosition / Time.deltaTime;
+        deltaList.Add(deltaToAdd);
+    }
 
-        // startingPosition.z = 0.1f;
-        // endingPosition.z = 0.1f;
+    private void CalculateFlick()
+    {
+        Vector2 average = Vector2.zero;
+        for(int i = 0; i < deltaList.Count; i++)
+        {
+            average += deltaList[i];
+        }
 
-        // startingPosition = Camera.main.ScreenToWorldPoint(startingPosition);
-        // endingPosition = Camera.main.ScreenToWorldPoint(endingPosition);
+        average /= deltaList.Count;
 
-        float duration = endTime - startTime;
+        Debug.Log("Average velocity is: " + average);
 
-        // Vector3 direction = endingPosition - startingPosition;
+        Vector3 direction = (endPosition - startingPosition).normalized;
+        direction *= average.magnitude;
+        myRigidBody.AddForce(direction * powerMultiplier, ForceMode.Impulse);
+        Debug.Log("Added force: " + direction);
 
-        float distance = direction.magnitude;
-
-        float power = distance / duration;
-
-        power -= expectedMinimum;
-        power /= expectedMaximum - expectedMinimum;
-
-        power = Mathf.Clamp01(power);
-
-        power *= desiredMaximum - desiredMinimum;
-        power += desiredMinimum;
-
-        Vector3 velocity = (ball.transform.rotation * direction).normalized * power * powerMultiplier;
-
-        velocity.y = 0f;
-
-        Debug.Log(velocity);
-
-        myRigidBody.AddForce(velocity, ForceMode.Impulse);
     }
 
     public void ResetBallAndScore()

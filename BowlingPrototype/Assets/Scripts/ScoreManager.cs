@@ -19,11 +19,13 @@ public class ScoreManager : MonoBehaviour
 
 	public GameObject[] pinArray;
 
-	public Transform[] pinPositionsArray;
+	public List<Transform> pinPositionsList;
 
 	private void Start()
 	{
 		instance = this;
+		pinArray = GameObject.FindGameObjectsWithTag("Pin");
+		GeneratePinPos();
 	}
 
 	private void Update()
@@ -44,6 +46,7 @@ public class ScoreManager : MonoBehaviour
 	private void ScoreFade()
 	{
 		scoreText.text = scoreValue.ToString();
+		ResetPins();
 		// yield return new WaitForSeconds(waitingTime);
 		// scoreText.text = "";
 		// scoreValue = 0;
@@ -88,7 +91,7 @@ public class ScoreManager : MonoBehaviour
 	{
 		for(int i = 0; i < pinArray.Length; i++)
 		{
-			pinArray[i].transform.position = pinPositionsArray[i].position;
+			pinArray[i].transform.position = pinPositionsList[i].position;
 			Debug.Log("Set Pin " + i + " to position " + i);
 			pinArray[i].transform.rotation = Quaternion.identity;
 			Debug.Log("Set Pin " + i + " to default rotation");
@@ -96,6 +99,20 @@ public class ScoreManager : MonoBehaviour
 			pinArray[i].GetComponent<Rigidbody>().angularVelocity = Vector3.zero;
 			Debug.Log("Set Pin " + i + " to zero velocity/angular velocity");
 			
+		}
+	}
+
+	private void GeneratePinPos()
+	{
+		var emptyGameObject = new GameObject();
+		emptyGameObject.name = "template";
+		
+		for(int i = 0; i < pinArray.Length; i++)
+		{
+			var temp = Instantiate(emptyGameObject, pinArray[i].transform.position, Quaternion.identity);
+			temp.name = "PinPosition" + i;
+			temp.transform.localScale = pinArray[i].transform.localScale;
+			pinPositionsList.Add(temp.transform);
 		}
 	}
 }

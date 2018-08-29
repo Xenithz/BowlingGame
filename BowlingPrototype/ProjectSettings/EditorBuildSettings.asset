@@ -11,4 +11,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/TestFlick.unity
     guid: 75cde097f1d712342844ddce9193b3c1
+  - enabled: 0
+    path: Assets/Scenes/TestAR.unity
+    guid: 42ca946269b21fc40a701331bddadd4e
   m_configObjects: {}
