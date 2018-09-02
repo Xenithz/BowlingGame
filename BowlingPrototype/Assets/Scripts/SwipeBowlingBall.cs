@@ -42,6 +42,13 @@ public class SwipeBowlingBall : MonoBehaviour
 
     public bool detected;
 
+    [SerializeField]
+    private float velocityClamp;
+
+    public GameObject killBox;
+
+    public GameObject normalBox;
+
     private void Start()
     {
         deltaList = new List<Vector2>();
@@ -63,6 +70,18 @@ public class SwipeBowlingBall : MonoBehaviour
         {
             ResetBallAndScore();    
         }
+        if(Input.GetKeyDown(KeyCode.E))
+        {
+            ResetBallOnly();
+        }
+
+        // if(flickOnce == false)
+        // {
+        //     if(myRigidBody.velocity.magnitude <= 0.25f)
+        //     {
+        //         CallScoreCalculate();
+        //     }
+        // }
     }
 
     private void OnCollisionEnter(Collision myCollision)
@@ -71,8 +90,13 @@ public class SwipeBowlingBall : MonoBehaviour
         {
             if(checkScoreOnce == true)
             {
+                killBox.SetActive(false);
                 CallScoreCalculate();
             }
+        }
+        if(myCollision.gameObject.tag == "KillBox")
+        {
+            CallScoreCalculate();
         }
     }
 
@@ -156,18 +180,20 @@ public class SwipeBowlingBall : MonoBehaviour
 
         Vector3 direction = (endPosition - startingPosition).normalized;
         direction *= average.magnitude;
-        myRigidBody.AddForce(direction * powerMultiplier, ForceMode.Impulse);
+        direction *= powerMultiplier;
+        direction = Vector3.ClampMagnitude(direction, velocityClamp);
+        myRigidBody.AddForce(direction, ForceMode.Impulse);
         Debug.Log("Added force: " + direction);
 
     }
 
     public void ResetBallAndScore()
     {
-        ball.transform.position = ballSpawn.transform.position;
-        ball.transform.rotation = Quaternion.identity;
+        myRigidBody.Sleep();
         myRigidBody.velocity = Vector3.zero;
         myRigidBody.angularVelocity = Vector3.zero;
-        myRigidBody.Sleep();
+        ball.transform.position = ballSpawn.transform.position;
+        ball.transform.rotation = Quaternion.identity;
         flickOnce = true;
         ScoreManager.instance.ResetScore();
         checkScoreOnce = true;
@@ -175,19 +201,15 @@ public class SwipeBowlingBall : MonoBehaviour
 
     public void ResetBallOnly()
     {
-        ball.transform.position = ballSpawn.transform.position;
-        ball.transform.rotation = Quaternion.identity;
+        myRigidBody.isKinematic = true;
         myRigidBody.velocity = Vector3.zero;
         myRigidBody.angularVelocity = Vector3.zero;
         myRigidBody.Sleep();
+        ball.transform.position = ballSpawn.transform.position;
+        ball.transform.rotation = Quaternion.Euler(Vector3.zero);
         flickOnce = true;
         checkScoreOnce = true;
-    }
-    
-    private void OnDrawGizmos() 
-    {
-        Gizmos.color = Color.red;
-        Gizmos.DrawCube(ballSpawn.transform.position, gizmoSize);
+        myRigidBody.isKinematic = false;
     }
 
     private void CallScoreCalculate()

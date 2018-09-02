@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 public class ScoreManager : MonoBehaviour 
 {
-	private SwipeBowlingBall myBall;
+	public SwipeBowlingBall myBall;
 
 	public static ScoreManager instance;
 	
@@ -29,6 +29,7 @@ public class ScoreManager : MonoBehaviour
 	{
 		instance = this;
 		pinArray = GameObject.FindGameObjectsWithTag("Pin");
+		myBall = GameObject.FindGameObjectWithTag("Player").GetComponent<SwipeBowlingBall>();
 		GeneratePinPos();
 	}
 
@@ -50,10 +51,18 @@ public class ScoreManager : MonoBehaviour
 	private void ScoreFade()
 	{
 		scoreText.text = scoreValue.ToString();
-		ResetPins();
+		StartCoroutine(EndStuff());
 		// yield return new WaitForSeconds(waitingTime);
 		// scoreText.text = "";
 		// scoreValue = 0;
+	}
+
+	IEnumerator EndStuff()
+	{
+		Debug.Log("No more");
+		yield return new WaitForSeconds(1f);
+		myBall.ResetBallAndScore();
+		myBall.killBox.SetActive(true);
 	}
 
 	IEnumerator CheckPins()
@@ -114,7 +123,7 @@ public class ScoreManager : MonoBehaviour
 		
 		for(int i = 0; i < pinArray.Length; i++)
 		{
-			var temp = Instantiate(emptyGameObject, pinArray[i].transform.position, Quaternion.Euler(-90f, 0f, 0f));
+			var temp = Instantiate(emptyGameObject, pinArray[i].transform.position, Quaternion.Euler(-0f, 0f, 0f));
 			temp.name = "PinPosition" + i;
 			temp.transform.localScale = pinArray[i].transform.localScale;
 			temp.transform.SetParent(pinArray[i].transform.parent);
