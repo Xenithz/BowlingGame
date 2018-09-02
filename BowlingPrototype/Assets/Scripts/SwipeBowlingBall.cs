@@ -49,8 +49,11 @@ public class SwipeBowlingBall : MonoBehaviour
 
     public GameObject normalBox;
 
+    public bool shouldTrackTouch;
+
     private void Start()
     {
+        shouldTrackTouch = true;
         deltaList = new List<Vector2>();
         myRigidBody = ball.GetComponent<Rigidbody>();
         flickOnce = true;
@@ -104,7 +107,7 @@ public class SwipeBowlingBall : MonoBehaviour
     {
         if(detected == true)
         {
-            if(flickOnce == true)
+            if(flickOnce == true && shouldTrackTouch == true)
             {
                 if(Input.touchCount > 0)
                 {

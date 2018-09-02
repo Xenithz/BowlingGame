@@ -5,6 +5,8 @@ using Vuforia;
 
 public class ProtoDetectHandler : DefaultTrackableEventHandler
 {
+	public GameObject mainCamera;
+
 	[SerializeField]
 	private SwipeBowlingBall myBowlingBall;
 
@@ -45,4 +47,5 @@ public class ProtoDetectHandler : DefaultTrackableEventHandler
 
 		myBowlingBall.detected = false;
 	}
+
 }
