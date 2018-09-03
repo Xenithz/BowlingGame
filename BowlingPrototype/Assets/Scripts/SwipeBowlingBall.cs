@@ -2,6 +2,11 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum BallState
+{
+    dontReset,
+    resetMe
+}
 public class SwipeBowlingBall : MonoBehaviour 
 {
     public GameObject ball;
@@ -51,8 +56,13 @@ public class SwipeBowlingBall : MonoBehaviour
 
     public bool shouldTrackTouch;
 
+    public float myTimer;
+
+    public float targetTime;
+
     private void Start()
     {
+        myTimer = 0f;
         shouldTrackTouch = true;
         deltaList = new List<Vector2>();
         myRigidBody = ball.GetComponent<Rigidbody>();
@@ -85,6 +95,23 @@ public class SwipeBowlingBall : MonoBehaviour
         //         CallScoreCalculate();
         //     }
         // }
+
+        if(myRigidBody.velocity.magnitude <= 0.25f && flickOnce == false)
+        {
+            SetTime();
+        }
+
+        if(myTimer >= targetTime)
+        {
+            ResetBallAndScore();            
+            flickOnce = true;
+            myTimer = 0;
+        }
+    }
+
+    private void SetTime()
+    {
+        myTimer += Time.deltaTime;
     }
 
     private void OnCollisionEnter(Collision myCollision)

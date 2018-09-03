@@ -12,7 +12,7 @@ public class ScoreManager : MonoBehaviour
 	[SerializeField]
 	private int scoreValue;
 	[SerializeField]
-	private int waitingTime = 2;
+	private float waitingTime;
 
 	[SerializeField]
 	private float checkThreshold = 0.6f;
@@ -68,7 +68,7 @@ public class ScoreManager : MonoBehaviour
 	IEnumerator CheckPins()
 	{
 		Debug.Log("Check pins was called!");
-		yield return new WaitForSeconds(5f);
+		yield return new WaitForSeconds(2f);
 		for(int i = 0; i < pinArray.Length; i++)
 		{
 			Debug.Log("There are " + pinArray.Length + " pins!");
